@@ -4,7 +4,7 @@ Run this script to create the database tables and insert sample data
 """
 
 from app import app, db, User, Module, Schedule, StudentModule, Notification
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 import sys
 
 def create_tables():
@@ -193,7 +193,7 @@ def create_sample_schedules():
                 {
                     'module_id': modules[0].id,
                     'classroom': 'Room 101',
-                    'date': date(base_date.year, base_date.month, base_date.day + 2),
+                    'date': base_date + timedelta(days=7),
                     'start_time': time(14, 0),
                     'end_time': time(15, 30)
                 },
