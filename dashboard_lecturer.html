@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Lecturer Dashboard - ACNSMS{% endblock %}
+
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-chalkboard-teacher me-2"></i>Lecturer Dashboard</h2>
+            <div>
+                <a href="{{ url_for('create_schedule') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create Schedule
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">My Modules</h6>
+                        <h3>{{ modules|length }}</h3>
+                    </div>
+                    <i class="fas fa-book fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Scheduled Classes</h6>
+                        <h3>{{ schedules|length }}</h3>
+                    </div>
+                    <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">This Week</h6>
+                        <h3>{{ schedules|selectattr('date', 'ge', moment().date())|selectattr('date', 'lt', moment().date() + timedelta(days=7))|list|length }}</h3>
+                    </div>
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Rescheduled</h6>
+                        <h3>{{ schedules|selectattr('status', 'equalto', 'rescheduled')|list|length }}</h3>
+                    </div>
+                    <i class="fas fa-exchange-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar and Schedule Management -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar me-2"></i>My Schedule Calendar</h5>
+            </div>
+            <div class="card-body">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list me-2"></i>My Scheduled Classes</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for schedule in schedules %}
+                        {% if schedule.date >= moment().date() %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ schedule.module.module_code }}</h6>
+                                <small class="text-muted">{{ schedule.date.strftime('%m/%d') }}</small>
+                            </div>
+                            <p class="mb-1">{{ schedule.module.module_name }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>{{ schedule.start_time.strftime('%H:%M') }} - {{ schedule.end_time.strftime('%H:%M') }}
+                                <br>
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ schedule.classroom }}
+                            </small>
+                            <div class="mt-2">
+                                {% if schedule.status == 'rescheduled' %}
+                                    <span class="badge bg-warning">Rescheduled</span>
+                                {% endif %}
+                                <a href="{{ url_for('reschedule', schedule_id=schedule.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit me-1"></i>Reschedule
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- My Modules -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-book me-2"></i>My Modules</h5>
+            </div>
+            <div class="card-body">
+                {% for module in modules %}
+                <div class="mb-3 p-3 border rounded">
+                    <h6 class="mb-1">{{ module.module_code }}</h6>
+                    <p class="mb-1">{{ module.module_name }}</p>
+                    <small class="text-muted">
+                        <i class="fas fa-users me-1"></i>{{ module.enrolled_students|length }} students enrolled
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: '/api/schedules',
+        eventClick: function(info) {
+            if (confirm('Do you want to reschedule this class?')) {
+                window.location.href = '/schedule/reschedule/' + info.event.id;
+            }
+        }
+    });
+    calendar.render();
+});
+</script>
+{% endblock %}

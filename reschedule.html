@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Reschedule Class - ACNSMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-exchange-alt me-2"></i>Reschedule Class
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Current Schedule Info -->
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Current Schedule</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Module:</strong> {{ schedule.module.module_code }} - {{ schedule.module.module_name }}<br>
+                            <strong>Date:</strong> {{ schedule.date.strftime('%Y-%m-%d') }}<br>
+                            <strong>Time:</strong> {{ schedule.start_time.strftime('%H:%M') }} - {{ schedule.end_time.strftime('%H:%M') }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Classroom:</strong> {{ schedule.classroom }}<br>
+                            <strong>Status:</strong> 
+                            <span class="badge bg-{{ 'warning' if schedule.status == 'rescheduled' else 'success' }}">
+                                {{ schedule.status.title() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="POST">
+                    <h6 class="mb-3"><i class="fas fa-edit me-2"></i>New Schedule Details</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="classroom" class="form-label">New Classroom</label>
+                                <input type="text" class="form-control" id="classroom" name="classroom" 
+                                       value="{{ schedule.classroom }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">New Date</label>
+                                <input type="date" class="form-control" id="date" name="date" 
+                                       value="{{ schedule.date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">New Start Time</label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" 
+                                       value="{{ schedule.start_time.strftime('%H:%M') }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="end_time" class="form-label">New End Time</label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" 
+                                       value="{{ schedule.end_time.strftime('%H:%M') }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Rescheduling this class will:
+                        <ul class="mb-0 mt-2">
+                            <li>Update the Google Calendar event</li>
+                            <li>Send email notifications to all enrolled students</li>
+                            <li>Send SMS notifications to students and administrators</li>
+                            <li>Mark this schedule as "Rescheduled"</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to reschedule this class? This will notify all students.')">
+                            <i class="fas fa-exchange-alt me-2"></i>Reschedule Class
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Preview -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-envelope me-2"></i>Email Notification Preview</h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <strong>Subject:</strong> Lecture Rescheduled: {{ schedule.module.module_code }}<br><br>
+                    <strong>Message:</strong><br>
+                    LECTURE RESCHEDULED<br><br>
+                    Module: {{ schedule.module.module_code }} - {{ schedule.module.module_name }}<br>
+                    Lecturer: {{ schedule.module.lecturer.username }}<br><br>
+                    OLD SCHEDULE:<br>
+                    Date: {{ schedule.date.strftime('%Y-%m-%d') }}<br>
+                    Time: {{ schedule.start_time.strftime('%H:%M') }}<br>
+                    Room: {{ schedule.classroom }}<br><br>
+                    NEW SCHEDULE:<br>
+                    Date: [New Date]<br>
+                    Time: [New Time]<br>
+                    Room: [New Room]<br><br>
+                    Please update your schedule accordingly.
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-sms me-2"></i>SMS Notification Preview</h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    ACNSMS: {{ schedule.module.module_code }} rescheduled to [New Date] [New Time] in [New Room]. Lecturer: {{ schedule.module.lecturer.username }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set minimum date to today
+document.getElementById('date').min = new Date().toISOString().split('T')[0];
+
+// Validate end time is after start time
+document.getElementById('end_time').addEventListener('change', function() {
+    const startTime = document.getElementById('start_time').value;
+    const endTime = this.value;
+    
+    if (startTime && endTime && startTime >= endTime) {
+        alert('End time must be after start time');
+        this.value = '';
+    }
+});
+</script>
+{% endblock %}

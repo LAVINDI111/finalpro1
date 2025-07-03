@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - ACNSMS{% endblock %}
+
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-graduate me-2"></i>Student Dashboard</h2>
+            <span class="badge bg-primary fs-6">Welcome, {{ current_user.username }}!</span>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Enrolled Modules</h6>
+                        <h3>{{ modules|length }}</h3>
+                    </div>
+                    <i class="fas fa-book fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Schedules</h6>
+                        <h3>{{ schedules|length }}</h3>
+                    </div>
+                    <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Upcoming Classes</h6>
+                        <h3>{{ schedules|selectattr('date', 'ge', moment().date())|list|length }}</h3>
+                    </div>
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Notifications</h6>
+                        <h3>{{ current_user.notifications|length }}</h3>
+                    </div>
+                    <i class="fas fa-bell fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar and Schedule -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar me-2"></i>Schedule Calendar</h5>
+            </div>
+            <div class="card-body">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list me-2"></i>Upcoming Classes</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for schedule in schedules %}
+                        {% if schedule.date >= moment().date() %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ schedule.module.module_code }}</h6>
+                                <small class="text-muted">{{ schedule.date.strftime('%m/%d') }}</small>
+                            </div>
+                            <p class="mb-1">{{ schedule.module.module_name }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>{{ schedule.start_time.strftime('%H:%M') }} - {{ schedule.end_time.strftime('%H:%M') }}
+                                <br>
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ schedule.classroom }}
+                            </small>
+                            {% if schedule.status == 'rescheduled' %}
+                                <span class="badge bg-warning">Rescheduled</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enrolled Modules -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-book me-2"></i>Enrolled Modules</h5>
+            </div>
+            <div class="card-body">
+                {% for module in modules %}
+                <div class="mb-3 p-3 border rounded">
+                    <h6 class="mb-1">{{ module.module_code }}</h6>
+                    <p class="mb-1">{{ module.module_name }}</p>
+                    <small class="text-muted">
+                        <i class="fas fa-user me-1"></i>{{ module.lecturer.username }}
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: '/api/schedules',
+        eventClick: function(info) {
+            alert('Class: ' + info.event.title + '\nTime: ' + info.event.start.toLocaleString() + '\nRoom: ' + info.event.extendedProps.classroom);
+        }
+    });
+    calendar.render();
+});
+</script>
+{% endblock %}

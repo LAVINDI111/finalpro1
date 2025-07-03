@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Create Schedule - ACNSMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>Create New Schedule
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="module_id" class="form-label">Module</label>
+                                <select class="form-select" id="module_id" name="module_id" required>
+                                    <option value="">Select Module</option>
+                                    {% for module in modules %}
+                                        <option value="{{ module.id }}">{{ module.module_code }} - {{ module.module_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="classroom" class="form-label">Classroom</label>
+                                <input type="text" class="form-control" id="classroom" name="classroom" 
+                                       placeholder="e.g., Room 101" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">Start Time</label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="end_time" class="form-label">End Time</label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Note:</strong> This schedule will be automatically added to Google Calendar 
+                                and all enrolled students will be notified.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Schedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Suggested Time Slots -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-lightbulb me-2"></i>Suggested Time Slots</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6>Morning Session</h6>
+                                <p>08:00 - 10:00</p>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTime('08:00', '10:00')">
+                                    Use This Slot
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6>Mid Morning</h6>
+                                <p>10:00 - 12:00</p>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTime('10:00', '12:00')">
+                                    Use This Slot
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6>Afternoon</h6>
+                                <p>14:00 - 16:00</p>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTime('14:00', '16:00')">
+                                    Use This Slot
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6>Evening</h6>
+                                <p>16:00 - 18:00</p>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setTime('16:00', '18:00')">
+                                    Use This Slot
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set minimum date to today
+document.getElementById('date').min = new Date().toISOString().split('T')[0];
+
+// Function to set suggested time slots
+function setTime(startTime, endTime) {
+    document.getElementById('start_time').value = startTime;
+    document.getElementById('end_time').value = endTime;
+}
+
+// Validate end time is after start time
+document.getElementById('end_time').addEventListener('change', function() {
+    const startTime = document.getElementById('start_time').value;
+    const endTime = this.value;
+    
+    if (startTime && endTime && startTime >= endTime) {
+        alert('End time must be after start time');
+        this.value = '';
+    }
+});
+</script>
+{% endblock %}
